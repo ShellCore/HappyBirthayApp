@@ -1,9 +1,14 @@
 package com.shellcore.android.happybirthayapp;
 
 import android.Manifest;
+import android.app.LoaderManager;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -13,11 +18,16 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int READ_CONTACTS_PERMISSION_REQUEST = 1;
     private static final String DEBUG = "MainActivity";
+    private static final int CONTACT_LOADER_ID = 90;
+
+    private SimpleCursorAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +44,10 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        setupCursorAdapter();
+        ListView listView = (ListView) findViewById(R.id.rec_list);
+        listView.setAdapter(adapter);
 
         getPermissionToReadUserContacts();
     }
@@ -87,10 +101,64 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 loadingContacts();
             }
+        } else {
+            loadingContacts();
         }
+    }
+
+    /**
+     * Function to initialize the elements of the adapter
+     */
+    private void setupCursorAdapter() {
+        String[] uiBindFrom = {
+                ContactsContract.Contacts.DISPLAY_NAME,
+                ContactsContract.Contacts.PHOTO_URI
+        };
+
+        int[] uiBindTo = {
+                R.id.txt_contact_name,
+                R.id.img_contact_photo
+        };
+
+        adapter = new SimpleCursorAdapter(this, R.layout.item_contact, null, uiBindFrom, uiBindTo, 0);
     }
 
     private void loadingContacts() {
         Log.d(DEBUG, "We have permission to load the contacts");
+        getLoaderManager().initLoader(CONTACT_LOADER_ID, new Bundle(), contactsLoader);
     }
+
+    private LoaderManager.LoaderCallbacks<Cursor> contactsLoader = new LoaderManager.LoaderCallbacks<Cursor>() {
+        @Override
+        public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+
+            String[] projectionFields = new String[] {
+                    ContactsContract.Contacts._ID,
+                    ContactsContract.Contacts.DISPLAY_NAME,
+                    ContactsContract.Contacts.PHOTO_URI
+
+            };
+
+            CursorLoader cursorLoader = new CursorLoader(
+                    MainActivity.this,
+                    ContactsContract.Contacts.CONTENT_URI,
+                    projectionFields,
+                    null,
+                    null,
+                    null
+            );
+
+            return cursorLoader;
+        }
+
+        @Override
+        public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+            adapter.swapCursor(data);
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Cursor> loader) {
+            adapter.swapCursor(null);
+        }
+    };
 }
