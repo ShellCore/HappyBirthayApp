@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.about_me) {
             return true;
         }
 
@@ -226,4 +226,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             adapter.swapCursor(null);
         }
     };
+
+    public void loadAboutMe(MenuItem item) {
+        Intent intent = new Intent(this, AboutMeActivity.class);
+        startActivity(intent);
+    }
 }
